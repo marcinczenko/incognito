@@ -5,7 +5,7 @@ import {
   Centered
 } from '@react-frontend-developer/react-layout-helpers'
 import { Button } from 'semantic-ui-react'
-import { HeaderBar, Title, Subtitle, Wrapper, Dropzone } from 'ui'
+import { HeaderBar, Title, Subtitle, Wrapper, Dropzone } from 'components/ui'
 
 class Home extends React.Component {
   state = {}
