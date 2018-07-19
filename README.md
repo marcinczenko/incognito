@@ -1,2 +1,0 @@
-# incognito
-Created with CodeSandbox
