@@ -6,6 +6,7 @@ import {
 } from '@react-frontend-developer/react-layout-helpers'
 import { Button } from 'semantic-ui-react'
 import { HeaderBar, Title, Subtitle, Wrapper, Dropzone } from 'components/ui'
+import { FileStreamReader } from 'services/file-reader'
 
 class Home extends React.Component {
   state = {}
@@ -14,10 +15,18 @@ class Home extends React.Component {
     this.setState({ file: files[0] })
   }
 
+  onReadProgress = event => {}
+
   read = () => {
     if (this.state.file) {
-      console.log('File:', this.state.file)
-      console.log('Size:', this.state.file.size)
+      const reader = new FileStreamReader({
+        file: this.state.file,
+        callback: this.onReadProgress
+      })
+
+      reader.read(dataChunk => {
+        console.log('Received Data Chunk:', dataChunk)
+      })
     }
   }
 

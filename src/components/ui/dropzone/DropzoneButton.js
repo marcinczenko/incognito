@@ -7,7 +7,10 @@ const Button = glamorous.button({
   border: 'none',
   background: 'transparent',
   margin: '2em auto',
-  fontSize: 'large'
+  fontSize: 'large',
+  ':focus': {
+    outline: 0
+  }
 })
 
 const DropzoneButton = () => (
