@@ -1,34 +1,39 @@
 const FileStreamReaderWorkerScript = () => {
-  // eslint-disable-next-line no-undef
-  const reader = new FileReaderSync()
-  let start
-  let endExclusive
-  let file
-  let numberOfChunks
-
-  const computeNumberOfChunks = file => {
-    const sizeOfLastDataChunk = file.size % 4096
-    return Math.floor(file.size / 4096) + (sizeOfLastDataChunk === 0 ? 0 : 1)
+  const FileStreamReaderWorker = function(file, callback) {
+    // eslint-disable-next-line no-undef
+    this.reader = new FileReaderSync()
+    this.start = 0
+    this.endExclusive = 4096
+    this.file = file
+    this.numberOfChunks = this.computeNumberOfChunks(file)
+    this.callback = callback
   }
 
-  const setup = input => {
-    file = input.file
-    numberOfChunks = input.numberOfChunks
-    start = 0
-    endExclusive = 4096
-  }
+  FileStreamReaderWorker.prototype = {
+    read: function() {
+      for (let i = 0; i < this.numberOfChunks; i++) {
+        this.callback && this.callback(this.readDataChunk(i))
+        this.progressMarkers()
+      }
+    },
 
-  const progressMarkers = () => {
-    start = start + 4096
-    endExclusive = start + 4096
-  }
+    computeNumberOfChunks: function(file) {
+      const sizeOfLastDataChunk = file.size % 4096
+      return Math.floor(file.size / 4096) + (sizeOfLastDataChunk === 0 ? 0 : 1)
+    },
 
-  const readDataChunk = index => {
-    const blob =
-      index === numberOfChunks - 1
-        ? file.slice(start)
-        : file.slice(start, endExclusive)
-    return new Uint8Array(reader.readAsArrayBuffer(blob))
+    progressMarkers: function() {
+      this.start = this.start + 4096
+      this.endExclusive = this.start + 4096
+    },
+
+    readDataChunk: function(index) {
+      const blob =
+        index === this.numberOfChunks - 1
+          ? this.file.slice(this.start)
+          : this.file.slice(this.start, this.endExclusive)
+      return new Uint8Array(this.reader.readAsArrayBuffer(blob))
+    }
   }
 
   const send = dataChunk => {
@@ -36,32 +41,11 @@ const FileStreamReaderWorkerScript = () => {
     self.postMessage(dataChunk)
   }
 
-  const readChunks = () => {
-    for (let i = 0; i < numberOfChunks; i++) {
-      send(readDataChunk(i))
-      progressMarkers()
-    }
-  }
-
-  const read = file => {
-    setup({
-      file,
-      numberOfChunks: computeNumberOfChunks(file)
-    })
-    readChunks()
-  }
-
   // eslint-disable-next-line no-restricted-globals
   self.onmessage = e => {
-    read(e.data.file)
+    const fileStreamReaderWorker = new FileStreamReaderWorker(e.data.file, send)
+    fileStreamReaderWorker.read()
   }
 }
-
-// let code = workercode.toString()
-// code = code.substring(code.indexOf('{') + 1, code.lastIndexOf('}'))
-
-// const blob = new Blob([code], { type: 'application/javascript' })
-
-// const FileStreamReaderWorkerScript = URL.createObjectURL(blob)
 
 export { FileStreamReaderWorkerScript }
